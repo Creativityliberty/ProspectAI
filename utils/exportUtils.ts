@@ -55,8 +55,18 @@ export const generateClientPack = async (prospect: Prospect) => {
         }
     }
   }
+  
+  // --- 3. ARTIFACTS (P2: Clean Editable Files) ---
+  const artifactsFolder = root.folder("artifacts");
+  if (artifactsFolder && prospect.artifacts) {
+    for (const a of prospect.artifacts) {
+        const safeTitle = a.title.replace(/[^a-z0-9_-]+/gi, '_').slice(0, 60);
+        const name = `${a.type}__${safeTitle}__v${a.version}.json`;
+        artifactsFolder.file(name, JSON.stringify(a, null, 2));
+    }
+  }
 
-  // --- 3. HUMAN READABLE OUTPUTS ---
+  // --- 4. HUMAN READABLE OUTPUTS ---
   const outputsFolder = root.folder("readable_outputs");
   if (outputsFolder) {
     if (prospect.painPoints) {
@@ -67,7 +77,7 @@ export const generateClientPack = async (prospect: Prospect) => {
     }
   }
 
-  // --- 4. LOGS (Transparence) ---
+  // --- 5. LOGS (Transparence) ---
   const logsFolder = root.folder("logs");
   if (logsFolder && prospect.factoryState) {
     Object.entries(prospect.factoryState).forEach(([agent, state]) => {

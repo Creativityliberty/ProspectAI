@@ -16,6 +16,14 @@ declare global {
   }
 }
 
+const fileToBase64 = (file: File) =>
+  new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
 const IntakeScreen: React.FC<IntakeScreenProps> = ({ onBack, onCreateWorkspace }) => {
   const [mode, setMode] = useState<IntakeMode>('mix');
   const [name, setName] = useState('');
@@ -24,6 +32,11 @@ const IntakeScreen: React.FC<IntakeScreenProps> = ({ onBack, onCreateWorkspace }
   const [textInput, setTextInput] = useState('');
   const [notes, setNotes] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  // New State for P1
+  const [images, setImages] = useState<string[]>([]);
+  const [links, setLinks] = useState<string[]>([]);
+  const [linkDraft, setLinkDraft] = useState('');
 
   // Audio State
   const [isListening, setIsListening] = useState<'none' | 'textInput' | 'notes'>('none');
@@ -74,9 +87,9 @@ const IntakeScreen: React.FC<IntakeScreenProps> = ({ onBack, onCreateWorkspace }
       prospectName: name,
       city,
       category,
-      images: [], // Images would be handled here in a real app
+      images: images, 
       textBlocks: textInput ? [{ origin: 'user_paste', text: textInput }] : [],
-      links: [],
+      links: links,
       notes
     };
 
@@ -187,10 +200,86 @@ const IntakeScreen: React.FC<IntakeScreenProps> = ({ onBack, onCreateWorkspace }
             </div>
           </div>
 
-          {/* 3. Sources */}
+          {/* New P1: Images */}
+          <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm">
+            <h3 className="text-sm font-bold text-gray-900 uppercase tracking-widest mb-4">Sources Images</h3>
+            <input
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={async (e) => {
+                const files = Array.from(e.target.files ?? []);
+                if (files.length === 0) return;
+
+                const b64s = await Promise.all(files.map(fileToBase64));
+                setImages((prev) => [...prev, ...b64s]);
+                }}
+                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+            />
+            {images.length > 0 && (
+                <div className="mt-4 grid grid-cols-4 gap-2">
+                {images.slice(0, 8).map((src, i) => (
+                    <div key={i} className="relative aspect-square">
+                        <img src={src} className="w-full h-full object-cover rounded-lg border border-gray-200" />
+                        <button 
+                            onClick={() => setImages(prev => prev.filter((_, idx) => idx !== i))}
+                            className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 w-4 h-4 flex items-center justify-center text-[10px]"
+                        >
+                            X
+                        </button>
+                    </div>
+                ))}
+                </div>
+            )}
+          </div>
+
+           {/* New P1: Liens */}
+          <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm">
+            <h3 className="text-sm font-bold text-gray-900 uppercase tracking-widest mb-4">Liens (Web, FB, Maps)</h3>
+            <div className="flex gap-2">
+                <input
+                type="url"
+                placeholder="https://facebook.com/..."
+                value={linkDraft}
+                onChange={(e) => setLinkDraft(e.target.value)}
+                className="flex-1 px-4 py-2 bg-gray-50 border-transparent focus:bg-white focus:border-indigo-200 focus:ring-4 focus:ring-indigo-500/10 rounded-xl transition-all font-medium text-sm"
+                />
+                <button
+                type="button"
+                onClick={() => {
+                    const url = (linkDraft || '').trim();
+                    if (!url) return;
+                    setLinks((prev) => [...prev, url]);
+                    setLinkDraft('');
+                }}
+                className="px-4 py-2 bg-gray-900 text-white text-sm font-bold rounded-xl"
+                >
+                Ajouter
+                </button>
+            </div>
+
+            {links.length > 0 && (
+                <ul className="mt-3 space-y-2">
+                {links.map((u, i) => (
+                    <li key={i} className="flex items-center justify-between gap-2 bg-gray-50 px-3 py-2 rounded-lg text-xs text-gray-700">
+                        <span className="truncate">{u}</span>
+                        <button
+                            type="button"
+                            onClick={() => setLinks((prev) => prev.filter((_, idx) => idx !== i))}
+                            className="text-red-500 hover:text-red-700 font-bold"
+                        >
+                            X
+                        </button>
+                    </li>
+                ))}
+                </ul>
+            )}
+            </div>
+
+          {/* 3. Données Brutes (Text) */}
           <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm relative">
              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-sm font-bold text-gray-900 uppercase tracking-widest">3. Données Brutes</h3>
+                <h3 className="text-sm font-bold text-gray-900 uppercase tracking-widest">Données Brutes</h3>
                 <button 
                   onClick={() => startListening('textInput')}
                   className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
@@ -206,7 +295,7 @@ const IntakeScreen: React.FC<IntakeScreenProps> = ({ onBack, onCreateWorkspace }
             <textarea 
               value={textInput}
               onChange={(e) => setTextInput(e.target.value)}
-              placeholder="Collez ici le texte brut de la page Facebook, du site web, ou dictez les infos..."
+              placeholder="Collez ici le texte brut..."
               className={`w-full h-32 p-4 bg-gray-50 border-transparent focus:bg-white focus:border-indigo-200 focus:ring-4 focus:ring-indigo-500/10 rounded-xl transition-all font-mono text-xs leading-relaxed resize-none ${isListening === 'textInput' ? 'ring-2 ring-red-200 bg-red-50' : ''}`}
             />
           </div>
@@ -214,7 +303,7 @@ const IntakeScreen: React.FC<IntakeScreenProps> = ({ onBack, onCreateWorkspace }
            {/* 4. Notes */}
           <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm relative">
             <div className="flex justify-between items-center mb-4">
-                <h3 className="text-sm font-bold text-gray-900 uppercase tracking-widest">4. Notes Stratégiques</h3>
+                <h3 className="text-sm font-bold text-gray-900 uppercase tracking-widest">Notes Stratégiques</h3>
                 <button 
                   onClick={() => startListening('notes')}
                   className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
@@ -230,7 +319,7 @@ const IntakeScreen: React.FC<IntakeScreenProps> = ({ onBack, onCreateWorkspace }
             <textarea 
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Observations particulières, angle d'attaque, points faibles détectés..."
+              placeholder="Observations particulières..."
               className={`w-full h-24 p-4 bg-gray-50 border-transparent focus:bg-white focus:border-indigo-200 focus:ring-4 focus:ring-indigo-500/10 rounded-xl transition-all font-medium text-sm resize-none ${isListening === 'notes' ? 'ring-2 ring-red-200 bg-red-50' : ''}`}
             />
           </div>
@@ -251,12 +340,8 @@ const IntakeScreen: React.FC<IntakeScreenProps> = ({ onBack, onCreateWorkspace }
                 <span className="font-bold">{name || 'À définir'}</span>
               </div>
               <div className="flex justify-between text-sm border-b border-white/10 pb-2">
-                <span className="text-indigo-300">Secteur</span>
-                <span className="font-bold">{category}</span>
-              </div>
-              <div className="flex justify-between text-sm border-b border-white/10 pb-2">
-                <span className="text-indigo-300">Données</span>
-                <span className="font-bold">{textInput ? 'Oui' : 'Non'}</span>
+                <span className="text-indigo-300">Sources</span>
+                <span className="font-bold">{images.length} images, {links.length} liens</span>
               </div>
             </div>
 

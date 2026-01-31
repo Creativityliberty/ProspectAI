@@ -42,6 +42,51 @@ export interface AgentRunState {
   timestamp?: number;
 }
 
+// --- WORKSPACE (P0) ---
+
+export type WorkspaceStatus =
+  | 'INTAKE_RECEIVED'
+  | 'RUNNING'
+  | 'NEEDS_INPUT'
+  | 'NORMALIZED'
+  | 'DONE'
+  | 'FAILED';
+
+export type ArtifactType =
+  | 'audit_system'
+  | 'offer_system'
+  | 'outreach_system'
+  | 'crm_system'
+  | 'seo_master'
+  | 'site_spec'
+  | 'sitemap_ascii'
+  | 'other';
+
+export interface Artifact {
+  id: string;
+  type: ArtifactType;
+  title: string;
+  content: any;
+  agent?: FactoryAgentName;
+  version: number;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface WorkspaceValidation {
+  hasContact: boolean;
+  localSignals: boolean;
+  ctaTopBottom: boolean;
+  noBannedWords: boolean;
+}
+
+export interface WorkspaceVersion {
+  id: string;
+  note: string;
+  createdAt: number;
+  snapshot: any; // snapshot complet Prospect (simple et efficace pour l’instant)
+}
+
 // --- MODULE 1: AUDIT SYSTEM ---
 export interface AuditSystem {
   checks: string[];
@@ -185,6 +230,15 @@ export interface Prospect {
   
   // The Full Prototype Vision
   prototype?: SiteArchitecture;
+
+  // --- WORKSPACE META (P0) ---
+  workspaceStatus?: WorkspaceStatus;
+  currentAgent?: FactoryAgentName | '';
+  warnings?: string[];
+  errors?: string[];
+  artifacts?: Artifact[];
+  versions?: WorkspaceVersion[];
+  validation?: WorkspaceValidation;
 }
 
 export interface ProspectingSession {
