@@ -1,0 +1,8 @@
+{
+  "name": "ProspectAI",
+  "description": "An intelligent lead generation agent that scouts local businesses via Google Maps, identifies those without websites, and generates custom sales pitches.",
+  "requestFramePermissions": [
+    "geolocation",
+    "microphone"
+  ]
+}
