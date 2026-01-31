@@ -6,13 +6,14 @@ const now = () => Date.now();
 export const makeArtifactId = (type: ArtifactType) =>
   `art_${type}_${Math.random().toString(16).slice(2)}_${Date.now()}`;
 
+export const getArtifact = (p: Prospect, id: string): Artifact | undefined =>
+  (p.artifacts ?? []).find((x) => x.id === id);
+
 export const upsertArtifact = (p: Prospect, a: Artifact): Prospect => {
   const list = p.artifacts ?? [];
   const idx = list.findIndex((x) => x.id === a.id);
 
-  if (idx === -1) {
-    return { ...p, artifacts: [...list, a] };
-  }
+  if (idx === -1) return { ...p, artifacts: [...list, a] };
 
   const next = [...list];
   next[idx] = a;
@@ -21,12 +22,7 @@ export const upsertArtifact = (p: Prospect, a: Artifact): Prospect => {
 
 export const createArtifact = (
   p: Prospect,
-  params: {
-    type: ArtifactType;
-    title: string;
-    content: any;
-    agent?: FactoryAgentName;
-  }
+  params: { type: ArtifactType; title: string; content: any; agent?: FactoryAgentName }
 ): Prospect => {
   const a: Artifact = {
     id: makeArtifactId(params.type),
@@ -42,8 +38,7 @@ export const createArtifact = (
 };
 
 export const updateArtifactContent = (p: Prospect, id: string, content: any): Prospect => {
-  const list = p.artifacts ?? [];
-  const a = list.find((x) => x.id === id);
+  const a = getArtifact(p, id);
   if (!a) return p;
 
   const updated: Artifact = {
@@ -54,9 +49,6 @@ export const updateArtifactContent = (p: Prospect, id: string, content: any): Pr
   };
   return upsertArtifact(p, updated);
 };
-
-export const getArtifact = (p: Prospect, id: string): Artifact | undefined =>
-  (p.artifacts ?? []).find((x) => x.id === id);
 
 export const removeArtifact = (p: Prospect, id: string): Prospect => {
   return { ...p, artifacts: (p.artifacts ?? []).filter((x) => x.id !== id) };

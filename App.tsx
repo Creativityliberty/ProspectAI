@@ -23,6 +23,11 @@ const App: React.FC = () => {
         console.error("Failed to load prospects", e);
       }
     }
+
+    // Event listener for batch updates (simple hack for deep component update)
+    (window as any).triggerProspectUpdate = (updated: Prospect) => {
+        handleUpdateProspect(updated);
+    };
   }, []);
 
   // Save to local storage on change
@@ -43,7 +48,13 @@ const App: React.FC = () => {
 
   const handleUpdateProspect = (updated: Prospect) => {
     setProspects(prev => prev.map(p => p.id === updated.id ? updated : p));
-    setSelectedProspect(updated);
+    if (selectedProspect && selectedProspect.id === updated.id) {
+        setSelectedProspect(updated);
+    }
+  };
+
+  const handleUpdateProspectsList = (newStats: Prospect[]) => {
+      setProspects(newStats);
   };
 
   return (
@@ -54,6 +65,7 @@ const App: React.FC = () => {
           prospects={prospects} 
           onNewProspect={() => setCurrentScreen('INTAKE')}
           onOpenProspect={handleOpenProspect}
+          onUpdateProspects={handleUpdateProspectsList}
         />
       )}
 

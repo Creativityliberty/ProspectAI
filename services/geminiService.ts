@@ -38,9 +38,9 @@ export const searchBusinesses = async (query: string): Promise<Prospect[]> => {
 
 export const runAgent = async (agentName: FactoryAgentName, prospect: Prospect): Promise<Partial<Prospect>> => {
   const ai = getAI();
-  const model = agentName === 'Copywriter' || agentName === 'PrototypeDesigner' 
-    ? 'gemini-3-flash-preview' 
-    : 'gemini-2.5-flash';
+  
+  // UPGRADE: Use gemini-3-flash-preview for ALL agents for maximum reliability and instruction following.
+  const model = 'gemini-3-flash-preview';
 
   let prompt = "";
   
